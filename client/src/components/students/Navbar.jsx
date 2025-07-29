@@ -1,21 +1,18 @@
 import React, { useContext } from 'react';
-import { assets } from '../../assets/assets';
 import { Link } from 'react-router-dom';
 import { useClerk, UserButton, useUser } from '@clerk/clerk-react';
 import { AppContext } from '../../context/AppContext';
+import { assets } from '../../assets/assets';
 
 const Navbar = () => {
-  const { navigate, isEducator } = useContext(AppContext); // ✅ proper context key
-  const isCourseListPage = window.location.pathname.includes('/course-list');
+  const { navigate, isEducator } = useContext(AppContext);
   const { openSignIn, openSignUp, signOut } = useClerk();
   const { user } = useUser();
 
+  const isCourseListPage = window.location.pathname.includes('/course-list');
+
   const handleEducatorClick = () => {
-    if (isEducator) {
-      navigate('/educator');
-    } else {
-      navigate('/educator');
-    }
+    navigate('/educator'); // redirect to educator dashboard or registration
   };
 
   return (
@@ -60,6 +57,10 @@ const Navbar = () => {
 
         .btn:hover {
           background-color: #2563eb;
+        }
+
+        .login-btn {
+          margin-right: 2.5rem;
         }
 
         .link {
@@ -121,23 +122,20 @@ const Navbar = () => {
               <button className="btn" onClick={openSignUp}>
                 Create Account
               </button>
-              <button onClick={openSignIn}>
-                <img src={assets.user_icon} alt="Sign In" className="user-icon" />
+              <button className="btn login-btn" onClick={openSignIn}>
+                Login
               </button>
             </>
           ) : (
             <>
-              {/* ✅ Educator Navigation Button */}
               <button className="nav-button" onClick={handleEducatorClick}>
                 {isEducator ? 'Educator Dashboard' : 'Become Educator'}
               </button>
 
-              {/* ✅ My Enrollments Link */}
               <Link to="/my-enrollments" className="link">
                 My Enrollments
               </Link>
 
-              {/* ✅ User Profile + Logout */}
               <UserButton />
               <button className="logout-btn" onClick={() => signOut(() => navigate('/'))}>
                 Logout

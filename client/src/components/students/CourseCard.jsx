@@ -1,10 +1,11 @@
 import React, { useContext } from 'react';
 import { assets } from '../../assets/assets';
 import { AppContext } from '../../context/AppContext';
-import { Link } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 
 const CourseCard = ({ course }) => {
   const { currency } = useContext(AppContext);
+  const { user } = useUser();
 
   // ✅ Calculate discounted price
   const discountedPrice = (
@@ -24,6 +25,15 @@ const CourseCard = ({ course }) => {
 
   const avgRating = getAvgRating();
   const totalRatings = course.courseRating?.length || 0;
+
+  const handleClick = () => {
+    if (user) {
+      scrollTo(0, 0);
+      window.location.href = `/course/${course._id}`;
+    } else {
+      alert("Please login to access this course.");
+    }
+  };
 
   return (
     <>
@@ -91,35 +101,33 @@ const CourseCard = ({ course }) => {
         }
       `}</style>
 
-      <Link to={`/course/${course._id}`} onClick={() => scrollTo(0, 0)}>
-        <div className="course-card">
-          <img src={course.courseThumbnail} alt="Course Thumbnail" />
+      <div className="course-card" onClick={handleClick}>
+        <img src={course.courseThumbnail} alt="Course Thumbnail" />
 
-          <div className="course-info">
-            <h3>{course.courseTitle}</h3>
-            <p>{course.educator?.name || "Aditya Educator"}</p>
+        <div className="course-info">
+          <h3>{course.courseTitle}</h3>
+          <p>{course.educator?.name || "Aditya Educator"}</p>
 
-            <div className="rating">
-              <p>{avgRating}</p>
-              <div className="stars">
-                {[...Array(5)].map((_, i) => (
-                  <img
-                    key={i}
-                    src={i < Math.round(avgRating) ? assets.star : assets.star_blank}
-                    alt="star"
-                  />
-                ))}
-              </div>
-              <p>({totalRatings})</p>
+          <div className="rating">
+            <p>{avgRating}</p>
+            <div className="stars">
+              {[...Array(5)].map((_, i) => (
+                <img
+                  key={i}
+                  src={i < Math.round(avgRating) ? assets.star : assets.star_blank}
+                  alt="star"
+                />
+              ))}
             </div>
-
-            <p>
-              {currency}
-              {discountedPrice}
-            </p>
+            <p>({totalRatings})</p>
           </div>
+
+          <p>
+            {currency}
+            {discountedPrice}
+          </p>
         </div>
-      </Link>
+      </div>
     </>
   );
 };

@@ -1,35 +1,89 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { AppContext } from '../../context/AppContext';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Searchbar from '../../components/students/Searchbar';
-import { useParams } from 'react-router-dom';
-import { assets } from '../../assets/assets';
-import Footer from '../../components/students/Footer';
 import CourseCard from '../../components/students/Coursecard';
+import Footer from '../../components/students/Footer';
+import { assets } from '../../assets/assets';
+import API from '../../utils/api';
 
 const CourseList = () => {
-  const { navigate, allCourses } = useContext(AppContext);
+  const navigate = useNavigate();
   const { input } = useParams();
-  const [filteredCourses, setfilteredCourses] = useState([]);
+  const [allCourses, setAllCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!allCourses || allCourses.length === 0) return;
+    const fetchCourses = async () => {
+      try {
+        const res = await API.get('/api/courses');
+        setAllCourses(res.data || []);
+      } catch (err) {
+        console.error('Failed to fetch courses:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const tempCourse = allCourses.slice();
+    fetchCourses();
+  }, []);
 
-    input
-      ? setfilteredCourses(
-          tempCourse.filter(item =>
-            item.courseTitle.toLowerCase().includes(input.toLowerCase())
-          )
+  useEffect(() => {
+    if (!allCourses.length) return;
+
+    const filtered = input
+      ? allCourses.filter(course =>
+          course.courseTitle?.toLowerCase().includes(input.toLowerCase())
         )
-      : setfilteredCourses(tempCourse);
-  }, [allCourses, input]);
+      : allCourses;
+
+    setFilteredCourses(filtered);
+    scrollTo(0, 0);
+  }, [input, allCourses]);
 
   return (
     <>
+      <div className="course-list-container">
+        <div className="course-list-header">
+          <h1>Course List</h1>
+          <p>
+            <span onClick={() => navigate('/')}>Home</span> / <span>Course List</span>
+          </p>
+        </div>
+
+        <Searchbar data={input} />
+
+        {input && (
+          <div className="search-info">
+            <p>{input}</p>
+            <img
+              src={assets.cross_icon}
+              alt="Clear"
+              onClick={() => navigate('/course-list')}
+            />
+          </div>
+        )}
+
+        <div className="courses-grid">
+          {loading ? (
+            <p className="loading">Loading courses...</p>
+          ) : filteredCourses.length > 0 ? (
+            filteredCourses.map(course => (
+              <CourseCard key={course._id} course={course} />
+            ))
+          ) : (
+            <p className="no-courses">No courses found.</p>
+          )}
+        </div>
+      </div>
+
+      <Footer />
+
       <style>{`
         .course-list-container {
           padding: 2rem 3rem;
+          max-width: 1440px;
+          margin: auto;
         }
 
         .course-list-header h1 {
@@ -41,7 +95,6 @@ const CourseList = () => {
         .course-list-header p {
           color: #4b5563;
           font-size: 1.125rem;
-          font-weight: 600;
         }
 
         .course-list-header span {
@@ -69,48 +122,16 @@ const CourseList = () => {
           margin-top: 2rem;
         }
 
-        .no-courses {
+        .no-courses,
+        .loading {
           font-size: 1.1rem;
           color: #9ca3af;
           margin-top: 2rem;
         }
       `}</style>
-
-      <div className="course-list-container">
-        <div className="course-list-header">
-          <h1>Course List</h1>
-          <p>
-            <span onClick={() => navigate('/')}>Home</span> / <span>Course List</span>
-          </p>
-        </div>
-
-        <Searchbar data={input} />
-
-        {input && (
-          <div className="search-info">
-            <p>{input}</p>
-            <img
-              src={assets.cross_icon}
-              alt="Clear"
-              onClick={() => navigate('/course-list')}
-            />
-          </div>
-        )}
-
-        <div className="courses-grid">
-          {filteredCourses.length > 0 ? (
-            filteredCourses.map((course, index) => (
-              <CourseCard key={index} course={course} />
-            ))
-          ) : (
-            <p className="no-courses">No courses found.</p>
-          )}
-        </div>
-      </div>
-
-      <Footer />
     </>
   );
 };
 
 export default CourseList;
+ 

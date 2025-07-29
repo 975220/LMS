@@ -1,30 +1,50 @@
-import express from "express";
-import dotenv from "dotenv";
-import cors from "cors"; // ⬅️ This was missing in your imports
-import ConnectDB from "./configs/mongodb.js";
-import { clerkWebboks } from "./controllers/webhooks.js";
+// server.js
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import connectDB from './config/db.js';
 
-// Load environment variables
-dotenv.config(); // ⬅️ only use one method to load .env
+import userRoutes from './routes/userRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import courseRoutes from './routes/courseRoutes.js';
+import { errorHandler } from './middleware/errorMiddleware.js';
 
-// Initialize Express 
+dotenv.config();
+
 const app = express();
 
-// Connect to database 
-await ConnectDB() 
+// ✅ Connect to MongoDB
+connectDB();
 
-// Middleware 
-app.use(cors());
-app.use(express.json()); // ⬅️ Good practice to handle JSON payloads
+// ✅ Middlewares
+app.use(cors({
+  origin: 'http://localhost:5173',  // Frontend URL
+  credentials: true,               // Allow cookies
+}));
 
-// Routes 
-app.get('/', (req, res) => res.send("API Working"));
-app.post('/clerk', express.json(), clerkWebboks)
+app.use(express.json());           // Parse JSON requests
+app.use(cookieParser());           // Read cookies
 
-// Port 
-const PORT = process.env.PORT || 5000; // ⬅️ Fix casing: should be process.env.PORT (not "Port")
+// ✅ API Routes
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/users', userRoutes);
 
-// Start server
+
+// ❌ Catch-all for unknown API routes
+app.all('*', (req, res) => {
+  res.status(404).json({
+    message: `❌ API route not found: [${req.method}] ${req.originalUrl}`,
+  });
+});
+
+// ⚠️ Global error handler
+app.use(errorHandler);
+
+// ✅ Start server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ Server is running on http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
